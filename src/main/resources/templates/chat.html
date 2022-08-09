@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Let"s CHATTING!</title>
+</head>
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    #chat {
+        width: 800px;
+        margin: 20px auto;
+    }
+
+    #chat #talk {
+        width: 800px;
+        height: 400px;
+        overflow: scroll;
+        border: 1px solid #aaa;
+    }
+
+    #chat #message {
+        width: 740px;
+        height: 100px;
+        display: inline-block;
+    }
+
+    #chat #sendZone > * {
+        vertical-align: top;
+
+    }
+
+    #chat #btnSend {
+        width: 54px;
+        height: 100px;
+    }
+
+    #chat #talk div {
+        width: 70%;
+        display: inline-block;
+        padding: 6px;
+        border-radius: 10px;
+
+    }
+
+    #chat .me {
+        background-color: #ffc;
+        margin: 1px 0px 2px 30%;
+    }
+
+    #chat .other {
+        background-color: #eee;
+        margin: 2px;
+    }
+
+    .enter {
+        display: flex !important;
+        margin-top: 5px;
+        margin-bottom: 5px;
+        width: 100% !important;
+        background: #c2c2c266;
+    }
+
+    .m-center {
+        margin: 0 auto;
+    }
+</style>
+<body>
+<div id="chat">
+    <h1>WebSocket Chatting</h1>
+    <label for="nickname"></label>
+    <input type="text" id="nickname" value="홍길동">
+    <input type="button" value="입장" id="btnEnter">
+    <input type="button" value="나가기" id="btnClose">
+    <br/>
+    <div id="talk"></div>
+    <div id="sendZone">
+        <label for="message"></label>
+        <textarea id="message" value="hi..."></textarea>
+        <input type="button" value="전송" id="btnSend">
+    </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.6.0.js"></script>
+<script type="text/javascript">
+    let isEnter = false;
+    const talk = document.getElementById("talk");
+    const socket = new WebSocket("ws://" + location.host + "/chat");
+
+    socket.onopen = function (e) {
+        console.log(`[onopen] 커넥션 접속`);
+    }
+
+    $("#btnEnter").click(function (e) {
+        fnCreateSocketMessage(isEnter)
+        socket.onmessage = function (e) {
+            const nickname = $("#nickname").val();
+            const item = `<div class="enter"><span class="m-center"><b>${nickname}</b>님이 입장했습니다</span></div>`;
+            talk.innerHTML += item;
+            talk.scrollTop = talk.scrollHeight; //스크롤바 하단으로 이동
+        }
+        isEnter = !isEnter;
+    });
+
+    $("#message").keyup(function (e) {
+        if (e.keyCode === 13) fnSocketSend();
+    });
+
+    $("#btnSend").click(function () {
+        fnSocketSend();
+    });
+
+    // 메시지 컨트롤러 전달
+    function fnCreateSocketMessage(isEnter) {
+        const sendMessage = $("#message").val();
+        if (!isEnter) {
+            let data = {};
+            data.isEnter = isEnter;
+            data.name = $("#nickname").val();
+            data.message = sendMessage;
+            data.date = new Date().toLocaleString();
+            socket.send(JSON.stringify(data));
+        } else {
+            if (sendMessage.trim() !== '') {
+                let data = {};
+                data.isEnter = isEnter;
+                data.name = $("#nickname").val();
+                data.message = sendMessage;
+                data.date = new Date().toLocaleString();
+                socket.send(JSON.stringify(data));
+            }
+        }
+    }
+
+    function fnSocketSend() {
+        fnCreateSocketMessage(isEnter);
+        // 화면 css
+        const me = $("#nickname").val();
+        socket.onmessage = function (e) {
+            let setClass;
+            const data = JSON.parse(e.data);
+            if (me === data.name) {
+                setClass = "me";
+            } else {
+                setClass = "other";
+            }
+            const item = `<div class="` + setClass + `">
+                            <span><b>${data.name}</b></span> [ ${data.date} ]<br/>
+                            <span>${data.message}</span>
+                          </div>`;
+            talk.innerHTML += item;
+            talk.scrollTop = talk.scrollHeight;//스크롤바 하단으로 이동
+        }
+        $("#message").val('');
+    }
+
+    $("#btnClose").click(function () {
+        isEnter = !isEnter;
+        const nickname = $("#nickname").val();
+        socket.close(1000, `${nickname}님 퇴장!`);
+    });
+</script>
+</body>
+</html>
