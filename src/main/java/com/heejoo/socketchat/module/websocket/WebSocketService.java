@@ -1,4 +1,4 @@
-package com.heejoo.socketchat.module;
+package com.heejoo.socketchat.module.websocket;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
@@ -14,9 +14,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Service
-@ServerEndpoint(value = "/chat") // WebSocket 활성화시키는 매핑 정보 지정
+@ServerEndpoint(value = "/webSocket/chat") // WebSocket 활성화시키는 매핑 정보 지정
 @Slf4j
-public class SocketService {
+public class WebSocketService {
     private static final Set<Session> clients = Collections.synchronizedSet(new HashSet<Session>());
 
     /*클라이언트 접속, 메시지 수서니, 접속 해제에 따른 이벤트 핸들러, 어노테이션으로 메소드 정의*/

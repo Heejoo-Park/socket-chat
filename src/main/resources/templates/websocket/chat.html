@@ -106,7 +106,7 @@
 <script type="text/javascript">
     let isEnter = false;
     const talk = document.getElementById("talk");
-    const socket = new WebSocket("ws://" + location.host + "/chat");
+    const socket = new WebSocket("ws://" + location.host + "/webSocket/chat");
 
     socket.onopen = function (e) {
         console.log(`[onopen] 커넥션 접속`);
