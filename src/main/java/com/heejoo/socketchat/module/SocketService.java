@@ -1,6 +1,7 @@
 package com.heejoo.socketchat.module;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.configurationprocessor.json.JSONException;
 import org.springframework.boot.configurationprocessor.json.JSONObject;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ public class SocketService {
     @OnOpen
     public void onOpen(Session s) {
         log.info("##### onOpen Session {} ", s.toString());
+        System.out.println(clients);
         if (!clients.contains(s)) {
             clients.add(s);
         } else {
@@ -40,15 +42,24 @@ public class SocketService {
         if (!object.getBoolean("isEnter")) {
             for (Session s : clients) {
                 JSONObject tempObj = new JSONObject();
+                // type : E(출입구) / M(메시지)
                 tempObj.put("isEnter", true);
-                tempObj.put("name", object.getString("name"));
-                tempObj.put("message", object.getString("name").concat("님이 입장하셨습니다."));
+                tempObj.put("messageType", object.getString("messageType"));
+                tempObj.put("nickname", object.getString("nickname"));
+                tempObj.put("message", object.getString("nickname").concat("님이 입장하셨습니다."));
                 tempObj.put("date", object.getString("date"));
                 s.getBasicRemote().sendText(tempObj.toString());
             }
         } else {
             for (Session s : clients) {
-                s.getBasicRemote().sendText(msg);
+                JSONObject tempObj = new JSONObject();
+                // type : E(입장) / M(메시지)
+                tempObj.put("isEnter", true);
+                tempObj.put("messageType", object.getString("messageType"));
+                tempObj.put("nickname", object.getString("nickname"));
+                tempObj.put("message", object.getString("message"));
+                tempObj.put("date", object.getString("date"));
+                s.getBasicRemote().sendText(tempObj.toString());
             }
         }
     }

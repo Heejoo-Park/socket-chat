@@ -10,7 +10,7 @@
     }
 
     #chat {
-        width: 800px;
+        width: 1000px;
         margin: 20px auto;
     }
 
@@ -19,6 +19,13 @@
         height: 400px;
         overflow: scroll;
         border: 1px solid #aaa;
+    }
+
+    #chat #userState {
+        width: 800px;
+        height: 500px;
+        border: 1px solid #aaa;
+        margin-right: 3px;
     }
 
     #chat #message {
@@ -66,6 +73,14 @@
     .m-center {
         margin: 0 auto;
     }
+
+    .m-10 {
+        margin: 10px;
+    }
+
+    #li::marker {
+        color: gray;
+    }
 </style>
 <body>
 <div id="chat">
@@ -75,11 +90,16 @@
     <input type="button" value="입장" id="btnEnter">
     <input type="button" value="나가기" id="btnClose">
     <br/>
-    <div id="talk"></div>
-    <div id="sendZone">
-        <label for="message"></label>
-        <textarea id="message" value="hi..."></textarea>
-        <input type="button" value="전송" id="btnSend">
+    <div style="display: flex">
+        <div id="userState"></div>
+        <div>
+            <div id="talk"></div>
+            <div id="sendZone">
+                <label for="message"></label>
+                <textarea id="message" value="hi..."></textarea>
+                <input type="button" value="전송" id="btnSend">
+            </div>
+        </div>
     </div>
 </div>
 <script src="https://code.jquery.com/jquery-3.6.0.js"></script>
@@ -92,74 +112,61 @@
         console.log(`[onopen] 커넥션 접속`);
     }
 
-    $("#btnEnter").click(function (e) {
-        fnCreateSocketMessage(isEnter)
-        socket.onmessage = function (e) {
-            const nickname = $("#nickname").val();
-            const item = `<div class="enter"><span class="m-center"><b>${nickname}</b>님이 입장했습니다</span></div>`;
+    socket.onmessage = function (e) {
+        const object = JSON.parse(e.data);
+        const nickname = object.nickname;
+        const inputNickname = $("#nickname").val();
+        isEnter = object.isEnter;
+        // 입장
+        if (object.messageType === 'E' || object.messageType === 'C') {
+            const entrance = object.messageType === 'E' ? "입장" : "퇴장";
+
+            const item = `<div class="enter"><span class="m-center"><b>` + nickname + `</b>님이 ` + entrance + `했습니다</span></div>`;
             talk.innerHTML += item;
             talk.scrollTop = talk.scrollHeight; //스크롤바 하단으로 이동
+
+            if (object.messageType === 'C') {
+                socket.close(1000, `${nickname}님 퇴장!`);
+            }
+        } else {
+            // 대화
+            const setClass = inputNickname === nickname ? "me" : "other";
+            const item = `<div class="` + setClass + `">
+                                    <span><b>${nickname}</b></span> [ ${object.date} ]<br/>
+                                    <span>${object.message}</span>
+                                  </div>`;
+            talk.innerHTML += item;
+            talk.scrollTop = talk.scrollHeight;//스크롤바 하단으로 이동
+            $("#message").val('');
         }
-        isEnter = !isEnter;
+    }
+
+    $("#btnEnter").click(function (e) {
+        fnCreateSendMessage(isEnter, $("#nickname").val(), 'E', "");
     });
 
     $("#message").keyup(function (e) {
-        if (e.keyCode === 13) fnSocketSend();
+        if (e.keyCode === 13)
+            fnCreateSendMessage(isEnter, $("#nickname").val(), 'M', $("#message").val());
     });
 
     $("#btnSend").click(function () {
-        fnSocketSend();
+        fnCreateSendMessage(isEnter, $("#nickname").val(), 'M', $("#message").val());
     });
-
-    // 메시지 컨트롤러 전달
-    function fnCreateSocketMessage(isEnter) {
-        const sendMessage = $("#message").val();
-        if (!isEnter) {
-            let data = {};
-            data.isEnter = isEnter;
-            data.name = $("#nickname").val();
-            data.message = sendMessage;
-            data.date = new Date().toLocaleString();
-            socket.send(JSON.stringify(data));
-        } else {
-            if (sendMessage.trim() !== '') {
-                let data = {};
-                data.isEnter = isEnter;
-                data.name = $("#nickname").val();
-                data.message = sendMessage;
-                data.date = new Date().toLocaleString();
-                socket.send(JSON.stringify(data));
-            }
-        }
-    }
-
-    function fnSocketSend() {
-        fnCreateSocketMessage(isEnter);
-        // 화면 css
-        const me = $("#nickname").val();
-        socket.onmessage = function (e) {
-            let setClass;
-            const data = JSON.parse(e.data);
-            if (me === data.name) {
-                setClass = "me";
-            } else {
-                setClass = "other";
-            }
-            const item = `<div class="` + setClass + `">
-                            <span><b>${data.name}</b></span> [ ${data.date} ]<br/>
-                            <span>${data.message}</span>
-                          </div>`;
-            talk.innerHTML += item;
-            talk.scrollTop = talk.scrollHeight;//스크롤바 하단으로 이동
-        }
-        $("#message").val('');
-    }
 
     $("#btnClose").click(function () {
-        isEnter = !isEnter;
-        const nickname = $("#nickname").val();
-        socket.close(1000, `${nickname}님 퇴장!`);
+        fnCreateSendMessage(!isEnter, $("#nickname").val(), 'C', "");
     });
+
+    function fnCreateSendMessage(isEnter, nickname, messageType, message) {
+        let data = {};
+        data.isEnter = isEnter;
+        data.nickname = nickname;
+        data.messageType = messageType;
+        data.message = message;
+        data.date = new Date().toLocaleString();
+        socket.send(JSON.stringify(data));
+    }
 </script>
 </body>
 </html>
