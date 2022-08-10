@@ -26,7 +26,6 @@ public class SocketService {
     @OnOpen
     public void onOpen(Session s) {
         log.info("##### onOpen Session {} ", s.toString());
-        System.out.println(clients);
         if (!clients.contains(s)) {
             clients.add(s);
         } else {
