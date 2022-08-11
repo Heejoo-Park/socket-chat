@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+STOMP CHAT
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+<script type="text/javascript">
+    const socket = new SockJs("ws/chat");
+    const stomp = webstomp.over(socket);
+
+    stomp.connect({}, function (frame) {
+
+    });
+
+</script>
+</body>
+</html>
